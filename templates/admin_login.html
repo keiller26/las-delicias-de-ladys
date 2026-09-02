@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Administrador</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">
+            🔐
+        </div>
+
+        <h1>
+            Administrador
+        </h1>
+
+        <p class="descripcion">
+            Inicia sesión para administrar el sistema
+        </p>
+
+        <form method="POST">
+
+            <input
+                type="text"
+                name="usuario"
+                placeholder="Usuario"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Contraseña"
+                required
+            >
+
+            <button
+                type="submit"
+                class="boton boton-principal"
+            >
+                🔑 Ingresar
+            </button>
+
+        </form>
+
+        <br>
+
+        <a
+            href="/"
+            class="volver"
+        >
+            ← Volver al inicio
+        </a>
+
+    </main>
+
+</body>
+
+</html>

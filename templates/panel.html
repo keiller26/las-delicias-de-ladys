@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Mi cuenta</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">🥟</div>
+
+        <h1>Hola, {{ usuario.nombre }} 👋</h1>
+
+        <p class="descripcion">
+            Bienvenido a tu cuenta
+        </p>
+
+        <div class="codigo">
+
+            <p>Tu código de cliente</p>
+
+            <h2>
+                {{ usuario.codigo }}
+            </h2>
+
+        </div>
+
+        <div class="deuda">
+
+            <p>💰 Deuda actual</p>
+
+            <h2>$0</h2>
+
+        </div>
+
+        <div class="botones">
+
+          <a href="/consumo" class="boton boton-principal">
+    🥟 Registrar consumo
+          </a>
+<a
+    href="/separar"
+    class="boton boton-principal"
+>
+    🛍️ Separar pedido
+</a>
+
+<br>
+            <a
+    href="/mis-consumos"
+    class="boton boton-principal"
+>
+    📋 Ver mis consumos
+</a>
+<br>
+
+<a href="/admin" class="volver">
+    🔐 Acceso administrador
+</a>
+
+            <a href="/logout" class="volver">
+                🚪 Cerrar sesión
+            </a>
+
+        </div>
+
+    </main>
+
+</body>
+
+</html>

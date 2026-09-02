@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Registrarme</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">🥟</div>
+
+        <h1>Crear cuenta</h1>
+
+        <p class="descripcion">
+            Regístrate para llevar el control de tus consumos
+        </p>
+
+        <form method="POST" class="formulario">
+
+            <input
+                type="text"
+                name="nombre"
+                placeholder="Tu nombre completo"
+                required
+            >
+
+            <input
+                type="tel"
+                name="telefono"
+                placeholder="Número de teléfono"
+                required
+            >
+
+            <input
+                type="password"
+                name="password"
+                placeholder="Contraseña"
+                required
+            >
+
+            <button type="submit" class="boton boton-principal">
+                Crear cuenta
+            </button>
+
+        </form>
+
+        <br>
+
+        <a href="/" class="volver">
+            ← Volver al inicio
+        </a>
+
+    </main>
+
+</body>
+
+</html>

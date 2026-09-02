@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>Registro exitoso</title>
+
+    <link rel="stylesheet"
+          href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">🎉</div>
+
+        <h1>¡Registro exitoso!</h1>
+
+        <p class="descripcion">
+            Bienvenido, {{ usuario.nombre }}
+        </p>
+
+        <div class="codigo">
+
+            <p>Tu código único es:</p>
+
+            <h2>
+                {{ usuario.codigo }}
+            </h2>
+
+        </div>
+
+        <br>
+
+        <a href="/" class="boton boton-principal">
+            Ir al inicio
+        </a>
+
+    </main>
+
+</body>
+
+</html>

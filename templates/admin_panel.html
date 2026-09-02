@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Panel administrador</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+<div class="admin-container">
+
+    <!-- ================================================= -->
+    <!-- ENCABEZADO -->
+    <!-- ================================================= -->
+
+    <header class="admin-header">
+
+        <div>
+
+            <h1>👨‍💼 Administrador</h1>
+
+            <p>
+                Panel de control del negocio
+            </p>
+
+        </div>
+
+        <a
+            href="/admin/logout"
+            class="admin-logout"
+        >
+            🚪 Cerrar sesión
+        </a>
+
+    </header>
+
+
+    <!-- ================================================= -->
+    <!-- RESUMEN -->
+    <!-- ================================================= -->
+
+    <section class="admin-resumen">
+
+        <div class="admin-card">
+
+            <span class="admin-icon">
+                👥
+            </span>
+
+            <div>
+
+                <p>Clientes</p>
+
+                <h2>
+                    {{ usuarios|length }}
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="admin-card">
+
+            <span class="admin-icon">
+                🥟
+            </span>
+
+            <div>
+
+                <p>Productos</p>
+
+                <h2>
+                    {{ productos|length }}
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="admin-card">
+
+            <span class="admin-icon">
+                📋
+            </span>
+
+            <div>
+
+                <p>Consumos</p>
+
+                <h2>
+                    {{ consumos|length }}
+                </h2>
+
+            </div>
+
+        </div>
+
+
+        <div class="admin-card">
+
+            <span class="admin-icon">
+                💰
+            </span>
+
+            <div>
+
+                <p>Ventas</p>
+
+                <h2>
+                    ${{ "{:,}".format(total_ventas).replace(",", ".") }}
+                </h2>
+
+            </div>
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- CLIENTES -->
+    <!-- ================================================= -->
+
+    <section class="admin-section">
+
+        <div class="admin-section-header">
+
+            <div>
+
+                <h2>👥 Clientes</h2>
+
+                <p>
+                    Clientes registrados en el sistema
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <div class="clientes-grid">
+
+            {% for usuario in usuarios %}
+
+            <div class="cliente-card">
+
+                <div class="cliente-avatar">
+                    👤
+                </div>
+
+                <div class="cliente-info">
+
+                    <h3>
+                        {{ usuario.nombre }}
+                    </h3>
+
+                    <p>
+                        📱 {{ usuario.telefono }}
+                    </p>
+
+                    <p>
+                        🔑 {{ usuario.codigo }}
+                    </p>
+
+                </div>
+
+
+                <div class="cliente-actions">
+
+                    <a
+                        href="{{ url_for('admin_ver_usuario', usuario_id=usuario.id) }}"
+                        class="btn-ver"
+                    >
+                        👁️ Ver cliente
+                    </a>
+
+
+                    <form
+                        method="POST"
+                        action="{{ url_for('admin_eliminar_usuario', usuario_id=usuario.id) }}"
+                        onsubmit="return confirm('¿Seguro que deseas eliminar este cliente?');"
+                    >
+
+                        <button
+                            type="submit"
+                            class="btn-eliminar"
+                        >
+                            🗑️ Eliminar
+                        </button>
+
+                    </form>
+
+                </div>
+
+            </div>
+
+            {% else %}
+
+            <div class="admin-vacio">
+
+                <p>
+                    No hay clientes registrados.
+                </p>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- PRODUCTOS -->
+    <!-- ================================================= -->
+
+    <section class="admin-section">
+
+        <div class="admin-section-header">
+
+            <div>
+
+                <h2>🥟 Productos</h2>
+
+                <p>
+                    Administra los productos y precios
+                </p>
+
+            </div>
+
+        </div>
+
+
+        <!-- AGREGAR PRODUCTO -->
+
+        <div class="producto-form-card">
+
+            <h3>
+                ➕ Agregar producto
+            </h3>
+
+            <form
+                method="POST"
+                action="{{ url_for('admin_agregar_producto') }}"
+                class="producto-form"
+            >
+
+                <input
+                    type="text"
+                    name="nombre"
+                    placeholder="Nombre del producto"
+                    required
+                >
+
+                <input
+                    type="number"
+                    name="precio"
+                    placeholder="Precio"
+                    min="0"
+                    required
+                >
+
+                <button
+                    type="submit"
+                    class="btn-agregar"
+                >
+                    Agregar
+                </button>
+
+            </form>
+
+        </div>
+
+
+        <!-- LISTA PRODUCTOS -->
+
+        <div class="productos-grid">
+
+            {% for producto in productos %}
+
+            <div class="producto-admin-card">
+
+                <div>
+
+                    <h3>
+                        {{ producto.nombre }}
+                    </h3>
+
+                    <p>
+                        💰
+                        ${{ "{:,}".format(producto.precio).replace(",", ".") }}
+                    </p>
+
+                </div>
+
+
+                <form
+                    method="POST"
+                    action="{{ url_for('admin_eliminar_producto', producto_id=producto.id) }}"
+                    onsubmit="return confirm('¿Seguro que deseas eliminar este producto?');"
+                >
+
+                    <button
+                        type="submit"
+                        class="btn-eliminar"
+                    >
+                        🗑️
+                    </button>
+
+                </form>
+
+            </div>
+
+            {% endfor %}
+
+        </div>
+
+    </section>
+
+
+    <!-- ================================================= -->
+    <!-- CONSUMOS -->
+    <!-- ================================================= -->
+
+    <section class="admin-section">
+
+        <div class="admin-section-header">
+
+            <div>
+
+                <h2>📋 Todos los consumos</h2>
+
+                <p>
+                    Historial completo de consumos
+                </p>
+
+            </div>
+
+        </div>
+
+
+        {% if consumos %}
+
+        <div class="tabla-contenedor">
+
+            <table class="tabla-admin">
+
+                <thead>
+
+                    <tr>
+
+                        <th>Fecha</th>
+
+                        <th>Cliente</th>
+
+                        <th>Código</th>
+
+                        <th>Total</th>
+
+                        <th>Productos</th>
+
+                    </tr>
+
+                </thead>
+
+
+                <tbody>
+
+                    {% for consumo in consumos %}
+
+                    <tr>
+
+                        <td>
+
+                            {{ consumo.fecha.strftime("%d/%m/%Y") }}
+
+                            <br>
+
+                            <small>
+                                {{ consumo.fecha.strftime("%H:%M") }}
+                            </small>
+
+                        </td>
+
+
+                        <td>
+
+                            <strong>
+                                {{ consumo.usuario.nombre }}
+                            </strong>
+
+                        </td>
+
+
+                        <td>
+
+                            {{ consumo.usuario.codigo }}
+
+                        </td>
+
+
+                        <td>
+
+                            <strong class="precio-admin">
+
+                                ${{ "{:,}".format(consumo.total).replace(",", ".") }}
+
+                            </strong>
+
+                        </td>
+
+
+                        <td>
+
+                            {% for detalle in consumo.detalles %}
+
+                            <div class="detalle-producto">
+
+                                {{ detalle.cantidad }}
+                                ×
+                                {{ detalle.producto.nombre }}
+
+                            </div>
+
+                            {% endfor %}
+
+                        </td>
+
+                    </tr>
+
+                    {% endfor %}
+
+                </tbody>
+
+            </table>
+
+        </div>
+
+        {% else %}
+
+        <div class="admin-vacio">
+
+            <p>
+                Todavía no hay consumos registrados.
+            </p>
+
+        </div>
+
+        {% endif %}
+
+    </section>
+
+
+</div>
+
+</body>
+
+</html>

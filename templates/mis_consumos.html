@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Mis consumos</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">📋</div>
+
+        <h1>Mis consumos</h1>
+
+        <!-- DEUDA TOTAL -->
+
+        <div class="deuda">
+
+            <p>💰 Deuda total</p>
+
+            <h2>
+                ${{ "{:,}".format(deuda_total).replace(",", ".") }}
+            </h2>
+
+        </div>
+
+        <br>
+
+
+        {% if consumos %}
+
+            {% for consumo in consumos %}
+
+                <div class="consumo">
+
+                    <h3>
+                        📋 Consumo #{{ consumo.id }}
+                    </h3>
+
+
+                    <!-- FECHA -->
+
+                    {% if consumo.fecha %}
+
+                        <p>
+                            📅
+                            {{ consumo.fecha.strftime("%d/%m/%Y") }}
+
+                            <br>
+
+                            🕐
+                            {{ consumo.fecha.strftime("%I:%M %p") }}
+                        </p>
+
+                    {% endif %}
+
+
+                    <hr>
+
+
+                    <!-- PRODUCTOS -->
+
+                    {% for detalle in consumo.detalles %}
+
+                        <p>
+
+                            🥟
+
+                            <strong>
+                                {{ detalle.cantidad }} ×
+                                {{ detalle.nombre }}
+                            </strong>
+
+                            <br>
+
+                            Subtotal:
+                            ${{ "{:,}".format(
+                                detalle.subtotal
+                            ).replace(",", ".") }}
+
+                        </p>
+
+                    {% endfor %}
+
+
+                    <hr>
+
+
+                    <!-- TOTAL -->
+
+                    <strong>
+
+                        💰 Total:
+
+                        ${{ "{:,}".format(
+                            consumo.total
+                        ).replace(",", ".") }}
+
+                    </strong>
+
+                </div>
+
+                <br>
+
+            {% endfor %}
+
+
+        {% else %}
+
+            <p>
+                Todavía no tienes consumos registrados.
+            </p>
+
+        {% endif %}
+
+
+        <br>
+
+
+        <!-- REGISTRAR CONSUMO -->
+
+        <a
+            href="/consumo"
+            class="boton boton-principal"
+        >
+
+            🥟 Registrar consumo
+
+        </a>
+
+
+        <br>
+        <br>
+
+
+        <!-- VOLVER -->
+
+        <a
+            href="/panel"
+            class="volver"
+        >
+
+            ← Volver al panel
+
+        </a>
+
+    </main>
+
+</body>
+
+</html>

@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Las delicias de ladys</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <!-- LOGO -->
+
+        <div class="logo">
+            <img
+                src="{{ url_for('static', filename='img/ladys.png') }}"
+                alt="Las Delicias de Ladys"
+            >
+        </div>
+
+
+        <!-- TITULO -->
+
+        <h1>
+            Empanadas
+        </h1>
+
+
+        <!-- DESCRIPCION -->
+
+        <p class="descripcion">
+            Bienvenido al sistema de pedidos y fiados
+        </p>
+
+
+        <!-- BOTONES -->
+
+        <div class="botones">
+
+            <!-- INICIAR SESIÓN -->
+
+            <a
+                href="/login"
+                class="boton boton-principal"
+            >
+                Iniciar sesión
+            </a>
+
+
+            <!-- REGISTRARSE -->
+
+            <a
+                href="/registro"
+                class="boton boton-secundario"
+            >
+                Registrarme
+            </a>
+
+        </div>
+
+
+        <br><br>
+
+
+        <!-- ADMINISTRADOR -->
+
+        <a
+            href="/admin"
+            class="volver"
+        >
+            🔐 Acceso administrador
+        </a>
+
+    </main>
+
+</body>
+
+</html>

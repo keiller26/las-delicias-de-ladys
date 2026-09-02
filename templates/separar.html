@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Separar pedido</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">
+            🛍️
+        </div>
+
+        <h1>
+            Separar pedido
+        </h1>
+
+        <p class="descripcion">
+            Hola {{ usuario.nombre }}, selecciona lo que deseas separar.
+        </p>
+
+
+        <!-- ========================= -->
+        <!-- LISTA DE PRODUCTOS -->
+        <!-- ========================= -->
+
+        <div class="lista-productos">
+
+            {% for producto in productos %}
+
+            <div class="producto">
+
+                <div class="producto-info">
+
+                    <h3>
+                        {{ producto.nombre }}
+                    </h3>
+
+                    <p>
+                        ${{ "{:,}".format(producto.precio).replace(",", ".") }}
+                    </p>
+
+                </div>
+
+                <input
+                    type="number"
+                    class="cantidad"
+                    data-nombre="{{ producto.nombre }}"
+                    data-precio="{{ producto.precio }}"
+                    min="0"
+                    value="0"
+                >
+
+            </div>
+
+            {% else %}
+
+            <p>
+                No hay productos registrados.
+            </p>
+
+            {% endfor %}
+
+        </div>
+
+
+        <!-- ========================= -->
+        <!-- TOTAL -->
+        <!-- ========================= -->
+
+        <div class="deuda">
+
+            <p>
+                💰 Total del pedido
+            </p>
+
+            <h2 id="total">
+                $0
+            </h2>
+
+        </div>
+
+
+        <br>
+
+
+        <!-- ========================= -->
+        <!-- BOTÓN WHATSAPP -->
+        <!-- ========================= -->
+
+        <button
+            type="button"
+            class="boton boton-principal"
+            onclick="enviarWhatsApp()"
+        >
+            📱 Enviar pedido por WhatsApp
+        </button>
+
+
+        <br><br>
+
+
+        <a
+            href="/panel"
+            class="volver"
+        >
+            ← Volver al panel
+        </a>
+
+    </main>
+
+
+    <script>
+
+        // Obtener todos los campos de cantidad
+
+        const cantidades =
+            document.querySelectorAll(".cantidad");
+
+
+        const totalElemento =
+            document.getElementById("total");
+
+
+        // ==========================================
+        // CALCULAR TOTAL
+        // ==========================================
+
+        function calcularTotal() {
+
+            let total = 0;
+
+
+            cantidades.forEach(function(input) {
+
+                const cantidad =
+                    parseInt(input.value) || 0;
+
+                const precio =
+                    parseInt(input.dataset.precio) || 0;
+
+
+                total += cantidad * precio;
+
+            });
+
+
+            totalElemento.textContent =
+                "$" + total.toLocaleString("es-CO");
+
+        }
+
+
+        // Actualizar el total cuando cambie
+        // cualquier cantidad
+
+        cantidades.forEach(function(input) {
+
+            input.addEventListener(
+                "input",
+                calcularTotal
+            );
+
+        });
+
+
+        // ==========================================
+        // ENVIAR PEDIDO A WHATSAPP
+        // ==========================================
+
+        function enviarWhatsApp() {
+
+            let mensaje =
+                "🥟 *NUEVO PEDIDO PARA SEPARAR*\n\n";
+
+
+            mensaje +=
+                "👤 *Cliente:* {{ usuario.nombre }}\n";
+
+
+            mensaje +=
+                "🔑 *Código:* {{ usuario.codigo }}\n\n";
+
+
+            let total = 0;
+
+            let hayProductos = false;
+
+
+            // Revisar productos
+
+            cantidades.forEach(function(input) {
+
+                const cantidad =
+                    parseInt(input.value) || 0;
+
+
+                const precio =
+                    parseInt(input.dataset.precio) || 0;
+
+
+                const nombre =
+                    input.dataset.nombre;
+
+
+                if (cantidad > 0) {
+
+                    hayProductos = true;
+
+
+                    const subtotal =
+                        cantidad * precio;
+
+
+                    total += subtotal;
+
+
+                    mensaje +=
+                        "• " +
+                        cantidad +
+                        " x " +
+                        nombre +
+                        " - $" +
+                        subtotal.toLocaleString("es-CO") +
+                        "\n";
+
+                }
+
+            });
+
+
+            // ======================================
+            // SI NO SELECCIONÓ PRODUCTOS
+            // ======================================
+
+            if (!hayProductos) {
+
+                alert(
+                    "Selecciona al menos un producto."
+                );
+
+                return;
+
+            }
+
+
+            // ======================================
+            // TOTAL
+            // ======================================
+
+            mensaje +=
+                "\n💰 *TOTAL: $" +
+                total.toLocaleString("es-CO") +
+                "*\n\n";
+
+
+            mensaje +=
+                "📌 Pedido enviado desde el sistema de empanadas.";
+
+
+            // ======================================
+            // WHATSAPP DEL NEGOCIO
+            // ======================================
+
+            const telefono =
+                "573025463897";
+
+
+            // ======================================
+            // CREAR ENLACE
+            // ======================================
+
+            const url =
+                "https://wa.me/" +
+                telefono +
+                "?text=" +
+                encodeURIComponent(mensaje);
+
+
+            // Abrir WhatsApp
+
+            window.open(
+                url,
+                "_blank"
+            );
+
+        }
+
+    </script>
+
+</body>
+
+</html>

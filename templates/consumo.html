@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Registrar consumo</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+</head>
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">🥟</div>
+
+        <h1>Registrar consumo</h1>
+
+        <p class="descripcion">
+            Selecciona lo que consumiste
+        </p>
+
+
+        <form method="POST">
+
+            <div class="lista-productos">
+
+                {% for producto in productos %}
+
+                <div class="producto">
+
+                    <div class="producto-info">
+
+                        <h3>
+                            {{ producto.nombre }}
+                        </h3>
+
+                        <p>
+                            ${{ "{:,}".format(producto.precio).replace(",", ".") }}
+                        </p>
+
+                    </div>
+
+                    <input
+                        type="number"
+                        name="cantidad_{{ producto.id }}"
+                        class="cantidad"
+                        data-precio="{{ producto.precio }}"
+                        min="0"
+                        value="0"
+                    >
+
+                </div>
+
+                {% endfor %}
+
+            </div>
+
+
+            <div class="total">
+
+                <p>
+                    Total del consumo
+                </p>
+
+                <h2 id="total">
+                    $0
+                </h2>
+
+            </div>
+
+
+            <br>
+
+            <button
+                type="submit"
+                class="boton boton-principal"
+            >
+                🥟 Registrar consumo
+            </button>
+
+        </form>
+
+
+        <br>
+
+        <a
+            href="/panel"
+            class="volver"
+        >
+            ← Volver al panel
+        </a>
+
+    </main>
+
+
+    <script>
+
+        const cantidades =
+            document.querySelectorAll(".cantidad");
+
+        const totalElemento =
+            document.getElementById("total");
+
+
+        function calcularTotal() {
+
+            let total = 0;
+
+
+            cantidades.forEach(function(input) {
+
+                const cantidad =
+                    parseInt(input.value) || 0;
+
+                const precio =
+                    parseInt(input.dataset.precio) || 0;
+
+                total += cantidad * precio;
+
+            });
+
+
+            totalElemento.textContent =
+                "$" + total.toLocaleString("es-CO");
+
+        }
+
+
+        cantidades.forEach(function(input) {
+
+            input.addEventListener(
+                "input",
+                calcularTotal
+            );
+
+        });
+
+
+        calcularTotal();
+
+    </script>
+
+</body>
+
+</html>

@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>Cliente - {{ usuario.nombre }}</title>
+
+    <link
+        rel="stylesheet"
+        href="{{ url_for('static', filename='css/style.css') }}"
+    >
+
+    <style>
+
+        .admin-titulo {
+            margin-bottom: 5px;
+        }
+
+        .cliente-info {
+            background: #f5f5f5;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: left;
+        }
+
+        .cliente-info p {
+            margin: 8px 0;
+        }
+
+        .deuda-admin {
+            background: #fff1dc;
+            border-radius: 15px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+
+        .deuda-admin h2 {
+            margin: 5px 0;
+            color: #ed7d18;
+            font-size: 30px;
+        }
+
+        .consumo-admin {
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 15px;
+            padding: 18px;
+            margin-bottom: 18px;
+            text-align: left;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .consumo-admin h3 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .fecha {
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 15px;
+        }
+
+        .producto-consumo {
+            padding: 7px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .total-consumo {
+            margin-top: 15px;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: right;
+            color: #ed7d18;
+        }
+
+        .sin-consumos {
+            padding: 20px;
+            background: #f5f5f5;
+            border-radius: 15px;
+        }
+
+    </style>
+
+</head>
+
+
+<body>
+
+    <main class="contenedor">
+
+        <div class="logo">
+            👤
+        </div>
+
+        <h1 class="admin-titulo">
+            {{ usuario.nombre }}
+        </h1>
+
+        <p class="descripcion">
+            Información del cliente
+        </p>
+
+
+        <!-- INFORMACIÓN DEL CLIENTE -->
+
+        <div class="cliente-info">
+
+            <p>
+                📱
+                <strong>Teléfono:</strong>
+                {{ usuario.telefono }}
+            </p>
+
+            <p>
+                🔑
+                <strong>Código:</strong>
+                {{ usuario.codigo }}
+            </p>
+
+        </div>
+
+
+        <!-- DEUDA -->
+
+        <div class="deuda-admin">
+
+            <p>
+                💰 Deuda total
+            </p>
+
+            <h2>
+                ${{ "{:,}".format(deuda_total).replace(",", ".") }}
+            </h2>
+
+        </div>
+
+
+        <h2>
+            📋 Historial de consumos
+        </h2>
+
+
+        {% if consumos %}
+
+            {% for consumo in consumos %}
+
+                <div class="consumo-admin">
+
+                    <h3>
+                        🧾 Consumo #{{ consumo.id }}
+                    </h3>
+
+
+                    <!-- FECHA -->
+
+                    <p class="fecha">
+
+                        📅
+
+                        {% if consumo.fecha %}
+
+                            {{ consumo.fecha.strftime("%d/%m/%Y %I:%M %p") }}
+
+                        {% else %}
+
+                            Fecha no registrada
+
+                        {% endif %}
+
+                    </p>
+
+
+                    <!-- PRODUCTOS -->
+
+                    {% for detalle in consumo.detalles %}
+
+                        <div class="producto-consumo">
+
+                            {{ detalle.cantidad }}
+                            ×
+                            <strong>
+                                {{ detalle.producto.nombre }}
+                            </strong>
+
+                            <span>
+                                —
+                                ${{ "{:,}".format(detalle.subtotal).replace(",", ".") }}
+                            </span>
+
+                        </div>
+
+                    {% endfor %}
+
+
+                    <!-- TOTAL -->
+
+                    <div class="total-consumo">
+
+                        Total:
+
+                        ${{ "{:,}".format(consumo.total).replace(",", ".") }}
+
+                    </div>
+
+                </div>
+
+            {% endfor %}
+
+        {% else %}
+
+            <div class="sin-consumos">
+
+                <p>
+                    📋 Este cliente todavía no tiene consumos.
+                </p>
+
+            </div>
+
+        {% endif %}
+
+
+        <br>
+
+
+        <a
+            href="{{ url_for('admin_panel') }}"
+            class="boton boton-principal"
+        >
+            ← Volver al administrador
+        </a>
+
+
+        <br><br>
+
+
+        <a
+            href="{{ url_for('admin_logout') }}"
+            class="volver"
+        >
+            🚪 Cerrar sesión
+        </a>
+
+    </main>
+
+</body>
+
+</html>
