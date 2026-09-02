@@ -35,7 +35,7 @@ db = SQLAlchemy(app)
 # En Render estas variables se configurarán desde el panel.
 ADMIN_USUARIO = os.environ.get(
     "ADMIN_USUARIO",
-    "ladys"
+    "Ladys"
 )
 
 ADMIN_PASSWORD = os.environ.get(
