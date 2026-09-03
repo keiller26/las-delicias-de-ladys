@@ -20,23 +20,45 @@
         <h1>Iniciar sesión</h1>
 
         <p class="descripcion">
-            Ingresa tus datos para continuar
+            Ingresa con tu teléfono y contraseña
+            o utiliza tu código.
         </p>
 
         <form method="POST" class="formulario">
+
+            <!-- ============================= -->
+            <!-- TELÉFONO -->
+            <!-- ============================= -->
 
             <input
                 type="tel"
                 name="telefono"
                 placeholder="Número de teléfono"
-                required
             >
+
+            <!-- ============================= -->
+            <!-- CONTRASEÑA -->
+            <!-- ============================= -->
 
             <input
                 type="password"
                 name="password"
                 placeholder="Contraseña"
-                required
+            >
+
+            <p style="text-align: center; margin: 15px 0;">
+                — O —
+            </p>
+
+            <!-- ============================= -->
+            <!-- CÓDIGO -->
+            <!-- ============================= -->
+
+            <input
+                type="text"
+                name="codigo"
+                placeholder="Código (ej: EMP-ABC123)"
+                style="text-transform: uppercase;"
             >
 
             <button type="submit" class="boton boton-principal">
