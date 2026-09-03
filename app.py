@@ -2,21 +2,19 @@ from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 from datetime import datetime
+from pathlib import Path
 import random
 import string
 import sqlite3
-from pathlib import Path
 import os
 
 
 # ==========================================================
-# CONFIGURACIÓN
+# CONFIGURACIÓN DE LA APLICACIÓN
 # ==========================================================
 
 app = Flask(__name__)
 
-# En producción Render proporcionará esta variable.
-# Para trabajar localmente usamos una clave temporal.
 app.secret_key = os.environ.get(
     "SECRET_KEY",
     "clave-local-las-delicias-de-ladys"
@@ -29,10 +27,9 @@ db = SQLAlchemy(app)
 
 
 # ==========================================================
-# DATOS DEL ADMINISTRADOR
+# CONFIGURACIÓN DEL ADMINISTRADOR
 # ==========================================================
 
-# En Render estas variables se configurarán desde el panel.
 ADMIN_USUARIO = os.environ.get(
     "ADMIN_USUARIO",
     "Ladys"
@@ -43,8 +40,9 @@ ADMIN_PASSWORD = os.environ.get(
     "3847"
 )
 
+
 # ==========================================================
-# MODELO: USUARIO
+# MODELO: USUARIO / CLIENTE
 # ==========================================================
 
 class Usuario(db.Model):
@@ -67,7 +65,8 @@ class Usuario(db.Model):
 
     password = db.Column(
         db.String(200),
-        nullable=False
+        nullable=False,
+        default=""
     )
 
     codigo = db.Column(
@@ -182,7 +181,7 @@ class DetalleConsumo(db.Model):
 
 
 # ==========================================================
-# GENERAR CÓDIGO DE CLIENTE
+# GENERAR CÓDIGO ÚNICO DEL CLIENTE
 # ==========================================================
 
 def generar_codigo():
@@ -242,26 +241,17 @@ def admin_requerido():
 
 def reparar_base_datos():
 
-    """
-    Esta función:
-
-    1. Comprueba que exista la tabla consumo.
-    2. Agrega la columna fecha si no existe.
-    3. Coloca una fecha a los consumos que tengan fecha NULL.
-    """
-
     db_path = Path("instance") / "fiados.db"
 
     if not db_path.exists():
         return
 
     conexion = sqlite3.connect(db_path)
-
     cursor = conexion.cursor()
 
-    # ----------------------------------------------
-    # Revisar columnas de consumo
-    # ----------------------------------------------
+    # ------------------------------------------------------
+    # Revisar columnas de la tabla consumo
+    # ------------------------------------------------------
 
     cursor.execute(
         "PRAGMA table_info(consumo)"
@@ -272,9 +262,9 @@ def reparar_base_datos():
         for fila in cursor.fetchall()
     ]
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Crear columna fecha si no existe
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     if "fecha" not in columnas:
 
@@ -285,10 +275,9 @@ def reparar_base_datos():
             """
         )
 
-    # ----------------------------------------------
-    # MUY IMPORTANTE:
-    # reparar fechas NULL
-    # ----------------------------------------------
+    # ------------------------------------------------------
+    # Reparar fechas NULL
+    # ------------------------------------------------------
 
     fecha_actual = datetime.now().strftime(
         "%Y-%m-%d %H:%M:%S"
@@ -320,7 +309,7 @@ def inicio():
 
 
 # ==========================================================
-# REGISTRO
+# REGISTRO DE CLIENTE
 # ==========================================================
 
 @app.route(
@@ -331,21 +320,34 @@ def registro():
 
     if request.method == "POST":
 
-        nombre = request.form[
-            "nombre"
-        ].strip()
+        nombre = request.form.get(
+            "nombre",
+            ""
+        ).strip()
 
-        telefono = request.form[
-            "telefono"
-        ].strip()
+        telefono = request.form.get(
+            "telefono",
+            ""
+        ).strip()
 
-        password = request.form[
-            "password"
-        ]
+        password = request.form.get(
+            "password",
+            ""
+        )
 
-        # ------------------------------------------
-        # Verificar teléfono
-        # ------------------------------------------
+        # --------------------------------------------------
+        # Validar datos
+        # --------------------------------------------------
+
+        if not nombre:
+            return "El nombre es obligatorio."
+
+        if not telefono:
+            return "El teléfono es obligatorio."
+
+        # --------------------------------------------------
+        # Verificar teléfono existente
+        # --------------------------------------------------
 
         usuario_existente = Usuario.query.filter_by(
             telefono=telefono
@@ -358,9 +360,17 @@ def registro():
                 "ya está registrado."
             )
 
-        # ------------------------------------------
-        # Crear usuario
-        # ------------------------------------------
+        # --------------------------------------------------
+        # Crear cliente
+        # --------------------------------------------------
+
+        nueva_contraseña = ""
+
+        if password:
+
+            nueva_contraseña = generate_password_hash(
+                password
+            )
 
         nuevo_usuario = Usuario(
 
@@ -368,10 +378,9 @@ def registro():
 
             telefono=telefono,
 
-            password=password,
+            password=nueva_contraseña,
 
             codigo=generar_codigo()
-
         )
 
         db.session.add(
@@ -423,13 +432,53 @@ def login():
 
     if request.method == "POST":
 
-        telefono = request.form[
-            "telefono"
-        ].strip()
+        telefono = request.form.get(
+            "telefono",
+            ""
+        ).strip()
 
-        password = request.form[
-            "password"
-        ]
+        password = request.form.get(
+            "password",
+            ""
+        ).strip()
+
+        codigo = request.form.get(
+            "codigo",
+            ""
+        ).strip().upper()
+
+        # ==================================================
+        # ENTRAR CON CÓDIGO / LLAVE
+        # ==================================================
+
+        if codigo:
+
+            usuario = Usuario.query.filter_by(
+                codigo=codigo
+            ).first()
+
+            if not usuario:
+
+                return "Código incorrecto."
+
+            # ------------------------------------------------
+            # La llave siempre permite entrar.
+            # No importa si tiene contraseña.
+            # ------------------------------------------------
+
+            session["usuario_id"] = usuario.id
+
+            return redirect(
+                url_for("panel")
+            )
+
+        # ==================================================
+        # ENTRAR CON TELÉFONO Y CONTRASEÑA
+        # ==================================================
+
+        if not telefono:
+
+            return "Debes ingresar tu teléfono."
 
         usuario = Usuario.query.filter_by(
             telefono=telefono
@@ -442,9 +491,58 @@ def login():
                 "con este número."
             )
 
-        if usuario.password != password:
+        # --------------------------------------------------
+        # Verificar que tenga contraseña
+        # --------------------------------------------------
+
+        if not usuario.password:
+
+            return (
+                "Esta cuenta no tiene contraseña. "
+                "Debes ingresar utilizando tu código."
+            )
+
+        # --------------------------------------------------
+        # Verificar contraseña
+        # --------------------------------------------------
+
+        contraseña_correcta = False
+
+        try:
+
+            contraseña_correcta = check_password_hash(
+                usuario.password,
+                password
+            )
+
+        except (ValueError, TypeError):
+
+            # ------------------------------------------------
+            # Compatibilidad con contraseñas antiguas
+            # guardadas directamente.
+            # ------------------------------------------------
+
+            if usuario.password == password:
+
+                contraseña_correcta = True
+
+                usuario.password = generate_password_hash(
+                    password
+                )
+
+                db.session.commit()
+
+        # --------------------------------------------------
+        # Contraseña incorrecta
+        # --------------------------------------------------
+
+        if not contraseña_correcta:
 
             return "Contraseña incorrecta."
+
+        # --------------------------------------------------
+        # Iniciar sesión
+        # --------------------------------------------------
 
         session["usuario_id"] = usuario.id
 
@@ -510,15 +608,18 @@ def consumo():
         Producto.nombre
     ).all()
 
-    # ----------------------------------------------
+    # ======================================================
     # GUARDAR CONSUMO
-    # ----------------------------------------------
+    # ======================================================
 
     if request.method == "POST":
 
         total = 0
-
         detalles = []
+
+        # --------------------------------------------------
+        # Recorrer productos
+        # --------------------------------------------------
 
         for producto in productos:
 
@@ -545,20 +646,16 @@ def consumo():
 
                 detalles.append({
 
-                    "producto_id":
-                        producto.id,
+                    "producto_id": producto.id,
 
-                    "cantidad":
-                        cantidad,
+                    "cantidad": cantidad,
 
-                    "subtotal":
-                        subtotal
-
+                    "subtotal": subtotal
                 })
 
-        # ------------------------------------------
-        # No seleccionó nada
-        # ------------------------------------------
+        # --------------------------------------------------
+        # No seleccionó productos
+        # --------------------------------------------------
 
         if not detalles:
 
@@ -567,9 +664,9 @@ def consumo():
                 "al menos un producto."
             )
 
-        # ------------------------------------------
+        # --------------------------------------------------
         # Crear consumo
-        # ------------------------------------------
+        # --------------------------------------------------
 
         nuevo_consumo = Consumo(
 
@@ -578,7 +675,6 @@ def consumo():
             total=total,
 
             fecha=datetime.now()
-
         )
 
         db.session.add(
@@ -587,26 +683,21 @@ def consumo():
 
         db.session.flush()
 
-        # ------------------------------------------
+        # --------------------------------------------------
         # Guardar detalles
-        # ------------------------------------------
+        # --------------------------------------------------
 
         for detalle in detalles:
 
             nuevo_detalle = DetalleConsumo(
 
-                consumo_id=
-                    nuevo_consumo.id,
+                consumo_id=nuevo_consumo.id,
 
-                producto_id=
-                    detalle["producto_id"],
+                producto_id=detalle["producto_id"],
 
-                cantidad=
-                    detalle["cantidad"],
+                cantidad=detalle["cantidad"],
 
-                subtotal=
-                    detalle["subtotal"]
-
+                subtotal=detalle["subtotal"]
             )
 
             db.session.add(
@@ -647,16 +738,27 @@ def mis_consumos():
         Consumo.id.desc()
     ).all()
 
-    # ----------------------------------------------
-    # Seguridad adicional:
-    # evitar fechas None
-    # ----------------------------------------------
+    # ------------------------------------------------------
+    # Reparar fechas NULL
+    # ------------------------------------------------------
+
+    fechas_reparadas = False
 
     for consumo_item in consumos:
 
         if consumo_item.fecha is None:
 
             consumo_item.fecha = datetime.now()
+
+            fechas_reparadas = True
+
+    if fechas_reparadas:
+
+        db.session.commit()
+
+    # ------------------------------------------------------
+    # Calcular deuda
+    # ------------------------------------------------------
 
     deuda_total = sum(
         consumo_item.total
@@ -697,7 +799,7 @@ def separar():
 
 
 # ==========================================================
-# LOGIN ADMIN
+# LOGIN ADMINISTRADOR
 # ==========================================================
 
 @app.route(
@@ -708,18 +810,23 @@ def admin_login():
 
     if request.method == "POST":
 
-        usuario = request.form[
-            "usuario"
-        ].strip()
+        usuario = request.form.get(
+            "usuario",
+            ""
+        ).strip()
 
-        password = request.form[
-            "password"
-        ]
+        password = request.form.get(
+            "password",
+            ""
+        )
+
+        # --------------------------------------------------
+        # Verificar administrador
+        # --------------------------------------------------
 
         if (
             usuario == ADMIN_USUARIO
-            and
-            password == ADMIN_PASSWORD
+            and password == ADMIN_PASSWORD
         ):
 
             session["admin"] = True
@@ -739,7 +846,7 @@ def admin_login():
 
 
 # ==========================================================
-# PANEL ADMIN
+# PANEL ADMINISTRADOR
 # ==========================================================
 
 @app.route("/admin/panel")
@@ -751,33 +858,33 @@ def admin_panel():
             url_for("admin_login")
         )
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Clientes
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     usuarios = Usuario.query.order_by(
         Usuario.id.desc()
     ).all()
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Productos
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     productos = Producto.query.order_by(
         Producto.nombre
     ).all()
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Consumos
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     consumos = Consumo.query.order_by(
         Consumo.id.desc()
     ).all()
 
-    # ----------------------------------------------
-    # Reparar fechas None
-    # ----------------------------------------------
+    # ------------------------------------------------------
+    # Reparar fechas NULL
+    # ------------------------------------------------------
 
     fechas_reparadas = False
 
@@ -793,18 +900,18 @@ def admin_panel():
 
         db.session.commit()
 
-    # ----------------------------------------------
-    # Total ventas
-    # ----------------------------------------------
+    # ------------------------------------------------------
+    # Total de ventas
+    # ------------------------------------------------------
 
     total_ventas = sum(
         consumo_item.total
         for consumo_item in consumos
     )
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Estadísticas
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     total_clientes = len(usuarios)
 
@@ -829,7 +936,6 @@ def admin_panel():
         total_productos=total_productos,
 
         total_consumos=total_consumos
-
     )
 
 
@@ -848,9 +954,9 @@ def admin_ver_usuario(usuario_id):
             url_for("admin_login")
         )
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Buscar cliente
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     usuario = db.session.get(
         Usuario,
@@ -864,23 +970,19 @@ def admin_ver_usuario(usuario_id):
             404
         )
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Buscar consumos
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     consumos = Consumo.query.filter_by(
-
         usuario_id=usuario.id
-
     ).order_by(
-
         Consumo.id.desc()
-
     ).all()
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Reparar fechas NULL
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     fechas_reparadas = False
 
@@ -896,9 +998,9 @@ def admin_ver_usuario(usuario_id):
 
         db.session.commit()
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Calcular deuda
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     deuda_total = sum(
         consumo_item.total
@@ -914,7 +1016,6 @@ def admin_ver_usuario(usuario_id):
         consumos=consumos,
 
         deuda_total=deuda_total
-
     )
 
 
@@ -968,9 +1069,10 @@ def admin_agregar_producto():
             url_for("admin_login")
         )
 
-    nombre = request.form[
-        "nombre"
-    ].strip()
+    nombre = request.form.get(
+        "nombre",
+        ""
+    ).strip()
 
     try:
 
@@ -982,12 +1084,20 @@ def admin_agregar_producto():
 
         return "El precio debe ser un número."
 
+    # ------------------------------------------------------
+    # Validar nombre
+    # ------------------------------------------------------
+
     if not nombre:
 
         return (
             "El nombre del producto "
             "es obligatorio."
         )
+
+    # ------------------------------------------------------
+    # Validar precio
+    # ------------------------------------------------------
 
     if precio < 0:
 
@@ -996,12 +1106,15 @@ def admin_agregar_producto():
             "ser negativo."
         )
 
+    # ------------------------------------------------------
+    # Crear producto
+    # ------------------------------------------------------
+
     nuevo_producto = Producto(
 
         nombre=nombre,
 
         precio=precio
-
     )
 
     db.session.add(
@@ -1038,9 +1151,9 @@ def admin_eliminar_producto(producto_id):
 
     if producto:
 
-        # ------------------------------------------
+        # --------------------------------------------------
         # Verificar si tiene consumos
-        # ------------------------------------------
+        # --------------------------------------------------
 
         detalle = DetalleConsumo.query.filter_by(
             producto_id=producto.id
@@ -1066,7 +1179,7 @@ def admin_eliminar_producto(producto_id):
 
 
 # ==========================================================
-# LOGOUT ADMIN
+# CERRAR SESIÓN ADMIN
 # ==========================================================
 
 @app.route("/admin/logout")
@@ -1083,7 +1196,7 @@ def admin_logout():
 
 
 # ==========================================================
-# LOGOUT CLIENTE
+# CERRAR SESIÓN CLIENTE
 # ==========================================================
 
 @app.route("/logout")
@@ -1102,21 +1215,21 @@ def logout():
 
 with app.app_context():
 
-    # ----------------------------------------------
+    # ------------------------------------------------------
     # Crear tablas
-    # ----------------------------------------------
+    # ------------------------------------------------------
 
     db.create_all()
 
-    # ----------------------------------------------
-    # Reparar columna fecha
-    # ----------------------------------------------
+    # ------------------------------------------------------
+    # Reparar base de datos
+    # ------------------------------------------------------
 
     reparar_base_datos()
 
-    # ----------------------------------------------
-    # Agregar productos iniciales
-    # ----------------------------------------------
+    # ------------------------------------------------------
+    # Productos iniciales
+    # ------------------------------------------------------
 
     if Producto.query.count() == 0:
 
@@ -1177,7 +1290,6 @@ with app.app_context():
             ("Salchipollo", 15000),
 
             ("Empanada de lechona", 4500)
-
         ]
 
         for nombre, precio in productos_iniciales:
@@ -1187,7 +1299,6 @@ with app.app_context():
                 nombre=nombre,
 
                 precio=precio
-
             )
 
             db.session.add(
