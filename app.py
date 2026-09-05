@@ -1,3 +1,4 @@
+
 from flask import Flask, render_template, request, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -20,20 +21,53 @@ app.secret_key = os.environ.get(
     "clave-local-las-delicias-de-ladys"
 )
 
-DATABASE_URL = os.environ.get(
-    "DATABASE_URL",
-    "sqlite:////var/data/fiados.db"
+
+# ==========================================================
+# CONFIGURACIÓN DE BASE DE DATOS
+# ==========================================================
+
+# En Render:
+#   DATABASE_URL debe contener la conexión PostgreSQL.
+#
+# En local:
+#   Si DATABASE_URL no existe, se utilizará:
+#   instance/fiados.db
+#
+# Esto permite trabajar localmente con SQLite y en Render
+# con PostgreSQL sin cambiar el código.
+
+instance_path = Path(app.instance_path)
+
+instance_path.mkdir(
+    parents=True,
+    exist_ok=True
 )
 
+sqlite_path = instance_path / "fiados.db"
+
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:///" + sqlite_path.as_posix()
+)
+
+
+# ----------------------------------------------------------
+# Compatibilidad con URLs antiguas de Render
+# ----------------------------------------------------------
+
 if DATABASE_URL.startswith("postgres://"):
+
     DATABASE_URL = DATABASE_URL.replace(
         "postgres://",
         "postgresql://",
         1
-)
+    )
+
 
 app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
+
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+
 
 db = SQLAlchemy(app)
 
@@ -222,6 +256,7 @@ def generar_codigo():
 def usuario_actual():
 
     if "usuario_id" not in session:
+
         return None
 
     usuario = db.session.get(
@@ -248,18 +283,64 @@ def admin_requerido():
 
 
 # ==========================================================
-# REPARAR BASE DE DATOS
+# REPARAR BASE DE DATOS SQLITE
 # ==========================================================
 
 def reparar_base_datos():
 
-    db_path = Path("/var/data/fiados.db")
+    # ------------------------------------------------------
+    # IMPORTANTE:
+    #
+    # Esta función solamente trabaja con SQLite.
+    #
+    # Si Render está usando PostgreSQL, no intenta abrir
+    # /var/data/fiados.db ni ningún archivo SQLite.
+    # ------------------------------------------------------
 
-    if not db_path.exists():
+    if not DATABASE_URL.startswith("sqlite"):
+
         return
 
-    conexion = sqlite3.connect(db_path)
+    # ------------------------------------------------------
+    # Ruta de la base de datos local
+    # ------------------------------------------------------
+
+    db_path = Path(app.instance_path) / "fiados.db"
+
+    if not db_path.exists():
+
+        return
+
+    # ------------------------------------------------------
+    # Conectar con SQLite
+    # ------------------------------------------------------
+
+    conexion = sqlite3.connect(
+        db_path
+    )
+
     cursor = conexion.cursor()
+
+    # ------------------------------------------------------
+    # Verificar que exista la tabla consumo
+    # ------------------------------------------------------
+
+    cursor.execute(
+        """
+        SELECT name
+        FROM sqlite_master
+        WHERE type='table'
+        AND name='consumo'
+        """
+    )
+
+    tabla_consumo = cursor.fetchone()
+
+    if not tabla_consumo:
+
+        conexion.close()
+
+        return
 
     # ------------------------------------------------------
     # Revisar columnas de la tabla consumo
@@ -305,6 +386,7 @@ def reparar_base_datos():
     )
 
     conexion.commit()
+
     conexion.close()
 
 
@@ -352,9 +434,11 @@ def registro():
         # --------------------------------------------------
 
         if not nombre:
+
             return "El nombre es obligatorio."
 
         if not telefono:
+
             return "El teléfono es obligatorio."
 
         # --------------------------------------------------
@@ -373,7 +457,7 @@ def registro():
             )
 
         # --------------------------------------------------
-        # Crear cliente
+        # Crear contraseña
         # --------------------------------------------------
 
         nueva_contraseña = ""
@@ -383,6 +467,10 @@ def registro():
             nueva_contraseña = generate_password_hash(
                 password
             )
+
+        # --------------------------------------------------
+        # Crear cliente
+        # --------------------------------------------------
 
         nuevo_usuario = Usuario(
 
@@ -475,7 +563,6 @@ def login():
 
             # ------------------------------------------------
             # La llave siempre permite entrar.
-            # No importa si tiene contraseña.
             # ------------------------------------------------
 
             session["usuario_id"] = usuario.id
@@ -627,6 +714,7 @@ def consumo():
     if request.method == "POST":
 
         total = 0
+
         detalles = []
 
         # --------------------------------------------------
@@ -1030,6 +1118,7 @@ def admin_ver_usuario(usuario_id):
         deuda_total=deuda_total
     )
 
+
 # ==========================================================
 # ELIMINAR CONSUMO
 # ==========================================================
@@ -1046,10 +1135,18 @@ def admin_eliminar_consumo(consumo_id):
             url_for("admin_login")
         )
 
+    # ------------------------------------------------------
+    # Buscar consumo
+    # ------------------------------------------------------
+
     consumo = db.session.get(
         Consumo,
         consumo_id
     )
+
+    # ------------------------------------------------------
+    # Si existe, eliminarlo
+    # ------------------------------------------------------
 
     if consumo:
 
@@ -1059,9 +1156,14 @@ def admin_eliminar_consumo(consumo_id):
 
         db.session.commit()
 
+    # ------------------------------------------------------
+    # Volver al panel administrativo
+    # ------------------------------------------------------
+
     return redirect(
         url_for("admin_panel")
     )
+
 
 # ==========================================================
 # ELIMINAR CLIENTE
@@ -1079,10 +1181,18 @@ def admin_eliminar_usuario(usuario_id):
             url_for("admin_login")
         )
 
+    # ------------------------------------------------------
+    # Buscar usuario
+    # ------------------------------------------------------
+
     usuario = db.session.get(
         Usuario,
         usuario_id
     )
+
+    # ------------------------------------------------------
+    # Eliminar usuario
+    # ------------------------------------------------------
 
     if usuario:
 
@@ -1267,6 +1377,9 @@ with app.app_context():
 
     # ------------------------------------------------------
     # Reparar base de datos
+    #
+    # Solamente se ejecuta realmente para SQLite.
+    # PostgreSQL de Render no se toca aquí.
     # ------------------------------------------------------
 
     reparar_base_datos()
