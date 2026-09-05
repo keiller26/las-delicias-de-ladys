@@ -20,7 +20,19 @@ app.secret_key = os.environ.get(
     "clave-local-las-delicias-de-ladys"
 )
 
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///fiados.db"
+DATABASE_URL = os.environ.get(
+    "DATABASE_URL",
+    "sqlite:////var/data/fiados.db"
+)
+
+if DATABASE_URL.startswith("postgres://"):
+    DATABASE_URL = DATABASE_URL.replace(
+        "postgres://",
+        "postgresql://",
+        1
+)
+
+app.config["SQLALCHEMY_DATABASE_URI"] = DATABASE_URL
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 db = SQLAlchemy(app)
@@ -241,7 +253,7 @@ def admin_requerido():
 
 def reparar_base_datos():
 
-    db_path = Path("instance") / "fiados.db"
+    db_path = Path("/var/data/fiados.db")
 
     if not db_path.exists():
         return
@@ -1018,6 +1030,38 @@ def admin_ver_usuario(usuario_id):
         deuda_total=deuda_total
     )
 
+# ==========================================================
+# ELIMINAR CONSUMO
+# ==========================================================
+
+@app.route(
+    "/admin/consumo/eliminar/<int:consumo_id>",
+    methods=["POST"]
+)
+def admin_eliminar_consumo(consumo_id):
+
+    if not admin_requerido():
+
+        return redirect(
+            url_for("admin_login")
+        )
+
+    consumo = db.session.get(
+        Consumo,
+        consumo_id
+    )
+
+    if consumo:
+
+        db.session.delete(
+            consumo
+        )
+
+        db.session.commit()
+
+    return redirect(
+        url_for("admin_panel")
+    )
 
 # ==========================================================
 # ELIMINAR CLIENTE

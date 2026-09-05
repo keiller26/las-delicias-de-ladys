@@ -374,7 +374,9 @@
 
                         <th>Total</th>
 
-                        <th>Productos</th>
+                       <th>Productos</th>
+
+<th>Acción</th>
 
                     </tr>
 
@@ -429,29 +431,38 @@
 
                         <td>
 
-                            {% for detalle in consumo.detalles %}
+    {% for detalle in consumo.detalles %}
 
-                            <div class="detalle-producto">
+    <div class="detalle-producto">
 
-                                {{ detalle.cantidad }}
-                                ×
-                                {{ detalle.producto.nombre }}
+        {{ detalle.cantidad }}
+        ×
+        {{ detalle.producto.nombre }}
 
-                            </div>
+    </div>
 
-                            {% endfor %}
+    {% endfor %}
 
-                        </td>
+</td>
 
-                    </tr>
+<td>
 
-                    {% endfor %}
+    <form
+        method="POST"
+        action="{{ url_for('admin_eliminar_consumo', consumo_id=consumo.id) }}"
+        onsubmit="return confirm('¿Seguro que deseas eliminar este consumo? Esta acción eliminará este registro de comida y descontará su valor de la deuda del cliente.');"
+    >
 
-                </tbody>
+        <button
+            type="submit"
+            class="btn-eliminar"
+        >
+            🗑️ Eliminar
+        </button>
 
-            </table>
+    </form>
 
-        </div>
+</td>
 
         {% else %}
 
