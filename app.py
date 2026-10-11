@@ -308,8 +308,8 @@ def reparar_base_datos():
     # ------------------------------------------------------
     # Ruta de la base de datos local
     # ------------------------------------------------------
-
-   db_path = sqlite_path
+    
+    db_path = sqlite_path
 
     if not db_path.exists():
 
