@@ -43,7 +43,11 @@ instance_path.mkdir(
     exist_ok=True
 )
 
-sqlite_path = instance_path / "fiados.db"
+# Ubicación de la base de datos
+if Path("/var/data").is_dir():
+    sqlite_path = Path("/var/data/fiados.db")
+else:
+    sqlite_path = instance_path / "fiados.db"
 
 DATABASE_URL = os.environ.get(
     "DATABASE_URL",
@@ -305,7 +309,7 @@ def reparar_base_datos():
     # Ruta de la base de datos local
     # ------------------------------------------------------
 
-    db_path = Path(app.instance_path) / "fiados.db"
+   db_path = sqlite_path
 
     if not db_path.exists():
 
